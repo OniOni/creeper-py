@@ -21,7 +21,6 @@ class Creeper(object):
 
         self._start = time.time()
         
-        self._pause = False
 
     def addCallback(self, callback):
         """
@@ -30,28 +29,22 @@ class Creeper(object):
 
         self.callbacks += [callback]
 
-    def toggle_pause(self, data):
-        """
-        Toggle state count/pause
-        """
-        self._pause = not self._pause
 
 
     def onChange(self, screen, last, data=None):
         """
         """
-        if not self._pause:
-            self.screen.force_update()        
-            try:
-                current = self.screen.get_active_window().get_application()
-
-                for callback in self.callbacks:
-                    callback(self._last.get_name(), 
-                             self._last.get_icon())
-                    self._last = current
-            except AttributeError:
-                pass
-
+        self.screen.force_update()        
+        try:
+            current = self.screen.get_active_window().get_application()
+            
+            for callback in self.callbacks:
+                callback(self._last.get_name(), 
+                         self._last.get_icon())
+                self._last = current
+        except AttributeError:
+            pass
+        
     def uptime(self):
         """Get deamon running time
         
@@ -76,6 +69,17 @@ class Statifier(object):
         self._creeper.addCallback(self.onUpdate)
         self.last = time.time()
         self._data = {}
+        self._pause = False
+
+    
+    def toggle_pause(self, data=None):
+        """
+        """
+        self._pause = not self._pause
+
+        if not self._pause:
+            self._last = time.time()
+        
         
 
     def onUpdate(self, name, icon):
@@ -86,19 +90,20 @@ class Statifier(object):
         - `name`:
         - `icon`:
         """
-        now = time.time()
-        spent = now - self.last
+        if not self._pause:
+            now = time.time()
+            spent = now - self.last
 
-        print name, spent
+            print name, spent
         
-        try:
-            self._data[name]['time'] += spent
-        except KeyError:
-            self._data[name] = {}
-            self._data[name]['time'] = spent
-            self._data[name]['icon'] = icon
-
-        self.last = now
+            try:
+                self._data[name]['time'] += spent
+            except KeyError:
+                self._data[name] = {}
+                self._data[name]['time'] = spent
+                self._data[name]['icon'] = icon
+                
+            self.last = now
 
     def getData(self):
         """Return stats about active windows
@@ -140,7 +145,7 @@ class MainWin(object):
 
         #Setting up pause
         self.pause = self.buildable.get_object('pause')
-        self.pause.connect('pressed', self.c.toggle_pause)
+        self.pause.connect('pressed', self.s.toggle_pause)
         
 
         self.app_store = self.buildable.get_object('app_store')
@@ -192,7 +197,7 @@ class MainWin(object):
         for k in d:
             self.app_store.append([d[k]['icon'], 
                                    k, 
-                                   int(d[k]['time']/60), 
+                                   d[k]['time'], 
                                    str((d[k]['time']/self.c.uptime()) * 100) + "%"])
 
     
