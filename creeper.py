@@ -1,5 +1,6 @@
-import wnck
-import gtk, gobject, time, datetime
+import wnck, gtk, gobject
+import time, datetime
+import pickle
 
 class Creeper(object):
     """lurk moar
@@ -123,6 +124,35 @@ class Statifier(object):
                    str(time) + " s" if time < 60 else str(time/60) + " m",
                    str(int((self._data[k]['time']/self._creeper.uptime())) * 100) + "%"
                    )
+            
+            
+    def save(self, data=None, f='dump'):
+        """Save info
+        
+        Arguments:
+        - `self`:
+        - `f`:
+        """
+        
+        fd = open(f, 'w')
+        pickle.dump(self._data, fd)
+
+
+    def load(self, f='dump'):
+        """
+        
+        Arguments:
+        - `self`:
+        - `f`:
+        """
+
+        fd = open(f, 'r')
+        self._data = pickle.load(fd)
+
+        
+
+        
+
 
 
 
@@ -140,6 +170,7 @@ class MainWin(object):
         self.c = Creeper()
 
         self.s = Statifier(self.c)
+        #self.s.load()
         
         self.buildable = gtk.Builder()
         self.buildable.add_from_file(ui)
@@ -156,6 +187,10 @@ class MainWin(object):
         #Setting up BQuit
         self.BQuit = self.buildable.get_object('BQuit')
         self.BQuit.connect('pressed', lambda x: gtk.main_quit)
+
+        #Setting up BSave
+        self.BSave = self.buildable.get_object('BSave')
+        self.BSave.connect('pressed', self.s.save)
 
         #Setting up pause
         self.pause = self.buildable.get_object('pause')
