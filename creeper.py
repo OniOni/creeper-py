@@ -17,7 +17,7 @@ class Creeper(object):
         self.screen.connect('active-window-changed', 
                             self.onChange)
         
-        self._last = self.screen.get_active_window()        
+        self._last = self.screen.get_active_window().get_application()        
 
         self._start = time.time()
         
@@ -41,8 +41,10 @@ class Creeper(object):
             for callback in self.callbacks:
                 callback(self._last.get_name(), 
                          self._last.get_icon())
-                self._last = current
-        except AttributeError:
+
+            self._last = current
+        except AttributeError as e:
+            print e
             pass
         
     def uptime(self):
@@ -81,7 +83,12 @@ class Statifier(object):
         if not self._pause:
             self._last = time.time()
         
-        
+    def __spent(self):
+        now = time.time()
+        ret = now - self.last if not self._pause else 0
+        self.last = now
+        return ret
+            
 
     def onUpdate(self, name, icon):
         """Called when active window changes
@@ -91,30 +98,30 @@ class Statifier(object):
         - `name`:
         - `icon`:
         """
-        if not self._pause:
-            now = time.time()
-            spent = now - self.last
-            self._current = name
+        self._current = name
 
-            print name, spent
+        spent = self.__spent()
         
-            try:
-                self._data[name]['time'] += spent
-            except KeyError:
-                self._data[name] = {}
-                self._data[name]['time'] = spent
-                self._data[name]['icon'] = icon
-                
-            self.last = now
+        print name, spent
+        
+        try:
+            self._data[name]['time'] += spent
+        except KeyError:
+            self._data[name] = {}
+            self._data[name]['time'] = spent
+            self._data[name]['icon'] = icon
+
 
     def getData(self):
         """Return stats about active windows
         """
         for k in self._data:
+            time = int(self._data[k]['time'])
             yield (self._data[k]['icon'], 
                    k, 
-                   self._data[k]['time'], 
-                   str(int((self._data[k]['time']/self._creeper.uptime()) * 100)) + "%"
+                   #self._data[k]['time'] if k != self._current else self._data[k]['time'] + self.__spent(),  
+                   str(time) + " s" if time < 60 else str(time/60) + " m",
+                   str(int((self._data[k]['time']/self._creeper.uptime())) * 100) + "%"
                    )
 
 
