@@ -70,6 +70,7 @@ class Statifier(object):
         self.last = time.time()
         self._data = {}
         self._pause = False
+        self._current = ''
 
     
     def toggle_pause(self, data=None):
@@ -93,6 +94,7 @@ class Statifier(object):
         if not self._pause:
             now = time.time()
             spent = now - self.last
+            self._current = name
 
             print name, spent
         
@@ -108,7 +110,12 @@ class Statifier(object):
     def getData(self):
         """Return stats about active windows
         """
-        return self._data
+        for k in self._data:
+            yield (self._data[k]['icon'], 
+                   k, 
+                   self._data[k]['time'], 
+                   str(int((self._data[k]['time']/self._creeper.uptime()) * 100)) + "%"
+                   )
 
 
 
@@ -194,11 +201,8 @@ class MainWin(object):
 
         self.app_store.clear()
 
-        for k in d:
-            self.app_store.append([d[k]['icon'], 
-                                   k, 
-                                   d[k]['time'], 
-                                   str((d[k]['time']/self.c.uptime()) * 100) + "%"])
+        for t in d:
+            self.app_store.append(t);
 
     
 
