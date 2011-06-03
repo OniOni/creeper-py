@@ -12,13 +12,13 @@ class Creeper(object):
         
         self.callbacks = []
 
-        self.screen = wnck.screen_get_default()        
+        self.screen = wnck.screen_get_default()
         self.screen.force_update()
 
-        self.screen.connect('active-window-changed', 
+        self.screen.connect('active-window-changed',
                             self.onChange)
         
-        self._last = self.screen.get_active_window().get_application()        
+        self._last = self.screen.get_active_window().get_application()
 
         self._start = time.time()
         
@@ -70,10 +70,14 @@ class Statifier(object):
         """
         self._creeper = creeper
         self._creeper.addCallback(self.onUpdate)
+
+        self.persis = Persitefier('dump')
+
         self.last = time.time()
-        self._data = {}
+        self.load()
         self._pause = False
         self._current = ''
+
 
     
     def toggle_pause(self, data=None):
@@ -124,36 +128,69 @@ class Statifier(object):
                    str(time) + " s" if time < 60 else str(time/60) + " m",
                    str(int((self._data[k]['time']/self._creeper.uptime())) * 100) + "%"
                    )
-            
-            
-    def save(self, data=None, f='dump'):
-        """Save info
+    
+    def save(self, w=None):
+        """Save State of Statifier
         
         Arguments:
         - `self`:
-        - `f`:
+        """
+        to_save = self._data
+
+        for k in to_save:
+            to_save[k]['icon'].save(k+'.png', 'png')
+            to_save[k]['icon'] = k+'.png'
+
+        self.persis.write(to_save)
+
+    def load(self):
+        """Load saved state of Statifier
+        
+        Arguments:
+        - `self`:
+        """
+        self._data = self.persis.read()
+
+        print self._data
+
+        for k in self._data:
+            self._data[k]['icon'] = gtk.gdk.pixbuf_new_from_file(self._data[k]['icon'])
+
+        print self._data
+
+    
+
+class Persitefier(object):
+    """
+    Create persistance contexte for saving objects with gdk.pixbuff
+    Based on pickle
+    """
+    
+    def __init__(self, file):
         """
         
-        fd = open(f, 'w')
-        pickle.dump(self._data, fd)
+        Arguments:
+        - `file`:
+        """
+        self._file = file
+        
+
+    def write(self, obj):
+        """
+        Write object to persistance context
+        """
+        fd = open(self._file, 'w')
+        pickle.dump(obj, fd)
 
 
-    def load(self, f='dump'):
+    def read(self):
         """
         
         Arguments:
         - `self`:
-        - `f`:
         """
-
-        fd = open(f, 'r')
-        self._data = pickle.load(fd)
-
-        
-
-        
-
-
+        fd = open(self._file, 'r')
+        return pickle.load(fd)
 
 
 
@@ -201,7 +238,7 @@ class MainWin(object):
 
         self.TreeView = self.buildable.get_object('AppTreeView')
 
-       # create a CellRenderer to render the data
+        # create a CellRenderer to render the data
         self.cell = gtk.CellRendererText()
         self.cell_pix = gtk.CellRendererPixbuf()
 
