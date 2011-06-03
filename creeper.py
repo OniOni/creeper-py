@@ -10,6 +10,16 @@ class Creeper(object):
         """Init
         """
         
+        self.persi = Persitefier('Creeper.dump')
+        
+        try:
+            self._start = self.persi.read()
+            print 'Fine : ' + str(self._start)
+        except IOError:
+            self._start = time.time()            
+            print 'Error : ' + str(self._start)
+            self.persi.write(self._start)
+
         self.callbacks = []
 
         self.screen = wnck.screen_get_default()
@@ -20,7 +30,6 @@ class Creeper(object):
         
         self._last = self.screen.get_active_window().get_application()
 
-        self._start = time.time()
         
 
     def addCallback(self, callback):
@@ -45,7 +54,6 @@ class Creeper(object):
 
             self._last = current
         except AttributeError as e:
-            print e
             pass
         
     def uptime(self):
@@ -71,10 +79,15 @@ class Statifier(object):
         self._creeper = creeper
         self._creeper.addCallback(self.onUpdate)
 
-        self.persis = Persitefier('dump')
+        self.persis = Persitefier('Statifier.dump')            
 
         self.last = time.time()
-        self.load()
+
+        try:
+            self.load()
+        except IOError:
+            self._data = {}
+
         self._pause = False
         self._current = ''
 
@@ -107,8 +120,6 @@ class Statifier(object):
 
         spent = self.__spent()
         
-        print name, spent
-        
         try:
             self._data[name]['time'] += spent
         except KeyError:
@@ -116,17 +127,30 @@ class Statifier(object):
             self._data[name]['time'] = spent
             self._data[name]['icon'] = icon
 
+    def getTotalTime(self):
+        """Return total of times
+        
+        Arguments:
+        - `self`:
+        """
+        total = 0
+        for k in self._data:
+            total += self._data[k]['time']
+
+        return total
+
 
     def getData(self):
         """Return stats about active windows
         """
+        total = self.getTotalTime()
         for k in self._data:
             time = int(self._data[k]['time'])
             yield (self._data[k]['icon'], 
                    k, 
                    #self._data[k]['time'] if k != self._current else self._data[k]['time'] + self.__spent(),  
                    str(time) + " s" if time < 60 else str(time/60) + " m",
-                   str(int((self._data[k]['time']/self._creeper.uptime())) * 100) + "%"
+                   str((self._data[k]['time']/total) * 100) + "%"
                    )
     
     def save(self, w=None):
@@ -151,12 +175,8 @@ class Statifier(object):
         """
         self._data = self.persis.read()
 
-        print self._data
-
         for k in self._data:
             self._data[k]['icon'] = gtk.gdk.pixbuf_new_from_file(self._data[k]['icon'])
-
-        print self._data
 
     
 
@@ -267,7 +287,6 @@ class MainWin(object):
         - `name`:
         - `icon`:
         """
-        print name, icon
         try: 
             self.app_store.append([name, icon])
         except:
