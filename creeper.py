@@ -173,11 +173,12 @@ class Statifier(object):
         Arguments:
         - `self`:
         """
-        to_save = self._data
+        to_save = {}
 
-        for k in to_save:
-            to_save[k]['icon'].save(k+'.png', 'png')
-            to_save[k]['icon'] = k+'.png'
+        for k in self._data:
+            self._data[k]['icon'].save(k+'.png', 'png')
+            to_save[k] = {'icon' : k+'.png' }
+            to_save[k]['time'] = self._data[k]['time']
 
         self.persis.write(to_save)
 
@@ -308,7 +309,7 @@ class MainWin(object):
         except:
             print self.app_store.get_n_columns()
 
-    def refresh(self):
+    def refresh(self, button=None):
         """Refresh info in 
         """
         d = self.s.getData()
