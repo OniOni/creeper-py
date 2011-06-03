@@ -83,6 +83,8 @@ class Statifier(object):
 
         self.last = time.time()
 
+        self._subscribers = []
+
         try:
             self.load()
         except IOError:
@@ -126,6 +128,18 @@ class Statifier(object):
             self._data[name] = {}
             self._data[name]['time'] = spent
             self._data[name]['icon'] = icon
+
+        for c in self._subscribers:
+            c()
+
+    def subscribe(self, s):
+        """Subscribe to be informed of updates
+        
+        Arguments:
+        - `self`:
+        """
+        self._subscribers += [s]
+
 
     def getTotalTime(self):
         """Return total of times
@@ -238,8 +252,10 @@ class MainWin(object):
         self.MainWin.connect('destroy', lambda x: gtk.main_quit)
 
         #Setting up BRefresh
-        self.BRefresh = self.buildable.get_object('BRefresh')
-        self.BRefresh.connect('pressed', self.refresh)
+        #self.BRefresh = self.buildable.get_object('BRefresh')
+        #self.BRefresh.connect('pressed', self.refresh)
+
+        self.s.subscribe(self.refresh)
 
         #Setting up BQuit
         self.BQuit = self.buildable.get_object('BQuit')
@@ -292,7 +308,7 @@ class MainWin(object):
         except:
             print self.app_store.get_n_columns()
 
-    def refresh(self, button):
+    def refresh(self):
         """Refresh info in 
         """
         d = self.s.getData()
