@@ -136,7 +136,7 @@ class Statifier(object):
         """Subscribe to be informed of updates
         
         Arguments:
-        - `self`:
+        - `s`: Function we wish to subscribe to event, takes no arguments
         """
         self._subscribers += [s]
 
@@ -197,7 +197,7 @@ class Statifier(object):
 
 class Persitefier(object):
     """
-    Create persistance contexte for saving objects with gdk.pixbuff
+    Create persistance contexte for saving objects
     Based on pickle
     """
     
