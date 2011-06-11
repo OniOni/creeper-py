@@ -1,14 +1,19 @@
 import wnck, gtk, gobject
 import time, datetime
 import pickle
+import dbus
 
-class Creeper(object):
+class Creeper(object, dbus.Service.Object):
     """lurk moar
     """
     
     def __init__(self):
         """Init
         """
+
+        dbus.service.Object.__init__(self, 
+                                     dbus.SessionBus(),
+                                     'org.mat.creeper.deamon')
         
         self.persi = Persitefier('Creeper.dump')
         
@@ -63,6 +68,16 @@ class Creeper(object):
         - `self`:
         """
         return time.time() - self._start
+
+
+    @dbus.service.signal
+    def windowChanged(self, window):
+        """
+        Signal emitted on window change
+        Arguments:
+        - `window`: Name of the new focused window
+        """
+        pass
 
 
 
