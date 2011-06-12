@@ -15,7 +15,8 @@ class Creeper(dbus.service.Object):
 
         dbus.service.Object.__init__(self, 
                                      dbus.SessionBus(),
-                                     '/org/mat/creeper/deamon')
+                                     '/org/mat/creeper/deamon',
+                                     bus_name='org.mat.creeper')
         
         self.persi = Persitefier('Creeper.dump')
         
@@ -86,7 +87,7 @@ class Creeper(dbus.service.Object):
         pass
 
 
-class Logger(object):
+class Logger(dbus.service.Object):
     """
     """
     
@@ -96,6 +97,11 @@ class Logger(object):
         Arguments:
         - `bus`: dbus session bus we wish to connect to
         """
+
+        dbus.service.Object.__init__(self, 
+                                     bus,
+                                     '/org/mat/creeper/logger',
+                                     bus_name='org.mat.creeper')
         
         self._bus = bus
 
@@ -107,6 +113,26 @@ class Logger(object):
         self._data = {}
 
         self._last = time.time()
+
+        
+    @dbus.service.method(dbus_interface='org.mat.creeper.logger')
+    def getLoggedApps(self):
+        """Return a list of currently logged apps
+        
+        Arguments:
+        - `self`:
+        """
+        return self._data.keys()
+
+    @dbus.service.method(dbus_interface='org.mat.creeper.logger')
+    def getAppData(self, app_name):
+        ret = []
+        for d in self._data[app_name]:
+            ret += [(d['start'], d['end'])]
+
+        return ret
+            
+
 
 
     def windowChanged(self, window):
@@ -122,10 +148,6 @@ class Logger(object):
             self._data[str(window)] = [{'start': self._last, 'end': now}]
 
         self._last = now
-
-        print self._data
-
-        
 
 
 
