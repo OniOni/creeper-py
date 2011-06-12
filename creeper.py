@@ -1,9 +1,11 @@
 import wnck, gtk, gobject
 import time, datetime
 import pickle
-import dbus
+import dbus, dbus.service, dbus.mainloop.glib
 
-class Creeper(object, dbus.Service.Object):
+dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+
+class Creeper(dbus.service.Object):
     """lurk moar
     """
     
@@ -13,7 +15,7 @@ class Creeper(object, dbus.Service.Object):
 
         dbus.service.Object.__init__(self, 
                                      dbus.SessionBus(),
-                                     'org.mat.creeper.deamon')
+                                     '/org/mat/creeper/deamon')
         
         self.persi = Persitefier('Creeper.dump')
         
@@ -51,8 +53,12 @@ class Creeper(object, dbus.Service.Object):
         """
         self.screen.force_update()        
         try:
+            #get current focused window
             current = self.screen.get_active_window().get_application()
-            
+
+            #send dbus signal with focused window's name
+            self.windowChanged(current.get_name())
+                        
             for callback in self.callbacks:
                 callback(self._last.get_name(), 
                          self._last.get_icon())
@@ -70,7 +76,7 @@ class Creeper(object, dbus.Service.Object):
         return time.time() - self._start
 
 
-    @dbus.service.signal
+    @dbus.service.signal('org.mat.creeper.deamon')
     def windowChanged(self, window):
         """
         Signal emitted on window change
@@ -78,6 +84,35 @@ class Creeper(object, dbus.Service.Object):
         - `window`: Name of the new focused window
         """
         pass
+
+
+class Logger(object):
+    """
+    """
+    
+    def __init__(self, bus=dbus.SessionBus()):
+        """
+        
+        Arguments:
+        - `bus`: dbus session bus we wish to connect to
+        """
+        
+        self._bus = bus
+
+        self._bus.add_signal_receiver(self.windowChanged,
+                                      dbus_interface='org.mat.creeper.deamon',
+                                      signal_name='windowChanged')
+
+
+    def windowChanged(self, window):
+        """Method called when windowChanged signal is received
+        
+        Arguments:
+        - `window`: Name of the new focused window
+        """
+        print(window)
+
+        
 
 
 
@@ -337,7 +372,10 @@ class MainWin(object):
     
 
 if __name__ == '__main__':
-    w = MainWin('ui.glade')
+    #w = MainWin('ui.glade')
+
+    c = Creeper()
+    l = Logger()
 
     gtk.main()
 
