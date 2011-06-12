@@ -58,7 +58,7 @@ class Creeper(dbus.service.Object):
             current = self.screen.get_active_window().get_application()
 
             #send dbus signal with focused window's name
-            self.windowChanged(current.get_name())
+            self.windowChanged(self._last.get_name())
                         
             for callback in self.callbacks:
                 callback(self._last.get_name(), 
@@ -131,7 +131,21 @@ class Logger(dbus.service.Object):
             ret += [(d['start'], d['end'])]
 
         return ret
-            
+
+
+    @dbus.service.method(dbus_interface='org.mat.creeper.logger')
+    def getTotalAppTime(self, app_name):
+        """dbus service giving total app focused time
+        
+        Arguments:
+        - `self`:
+        - `app_name`: Apps name
+        """
+        total = 0
+        for d in self._data[app_name]:
+            total += (d['end'] - d['start'])
+
+        return total
 
 
 
@@ -146,6 +160,8 @@ class Logger(dbus.service.Object):
             self._data[str(window)] += [{'start': self._last, 'end': now}]
         except KeyError:
             self._data[str(window)] = [{'start': self._last, 'end': now}]
+
+        print (str(window), 'start', self._last, 'end', now, now - self._last)
 
         self._last = now
 
