@@ -104,13 +104,26 @@ class Logger(object):
                                       signal_name='windowChanged')
 
 
+        self._data = {}
+
+        self._last = time.time()
+
+
     def windowChanged(self, window):
         """Method called when windowChanged signal is received
         
         Arguments:
         - `window`: Name of the new focused window
         """
-        print(window)
+        now = time.time()
+        try:
+            self._data[str(window)] += [{'start': self._last, 'end': now}]
+        except KeyError:
+            self._data[str(window)] = [{'start': self._last, 'end': now}]
+
+        self._last = now
+
+        print self._data
 
         
 
